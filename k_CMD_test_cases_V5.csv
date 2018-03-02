@@ -1,9 +1,0 @@
-Tenant/Staff/Vendor,normal/passage,NA,no,no,key + lockplace,V,X
-Tenant/Staff/Vendor,normal/passage,NA,yes,no,key + lockplace,V,V
-Tenant/Staff/Vendor,normal/passage,NA,no,yes,key + lockplace,V,V
-Tenant/Staff/Vendor,normal/passage,NA,no,no,key,V,X
-Tenant/Staff/Vendor,normal/passage,NA,yes,no,key,V,X
-Tenant/Staff/Vendor,normal/passage,NA,no,yes,key,V,V
-Tenant/Staff/Vendor,normal/passage,NA,no,no,lockplace,V,X
-Tenant/Staff/Vendor,normal/passage,NA,yes,no,lockplace,V,V
-Tenant/Staff/Vendor,normal/passage,NA,no,yes,lockplace,V,X
