@@ -2,6 +2,7 @@ const dbUtil = require('./db.js')
 const async = require('async');
 const fs = require('fs');
 const config = require("./config.json")
+const request = require("request")
 
 /*
 1. {cardType: {tenant: 1, staff: 2, vendor: 3, guest: 4, temp: 5, master: 6}}
@@ -12,8 +13,8 @@ const config = require("./config.json")
 6. {k1: {no: 0, yes: 1}}
 
 issue date改成前一天
-
 */
+
 const results = [{ 'CARDTYPE': 1, 'LOCKMODE': 'Normal', 'AREATC': 'NO', 'KEYTC': 'NO', 'ACCESSRULE': 'key+lockplace', 'OUTPUT': { 'k0': 1, 'k1': 0 } }]
 
 
@@ -43,6 +44,20 @@ function accessRule(cardType, status) {
     fs.writeFileSync(config.LOCKPARAMETERS_FILE, JSON.stringify(readFile, null, '\t'))
 }
 
+
+
+function processE() {
+    let parms = {
+        url: config.SERVER["REMOTE"] + '/lockapi/v00000000004/e0',
+        headers: {
+            'User-Agent': 'request'
+        }
+    }
+    console.log(parms)
+    let results = request.get(parms, (err, response, body) => {
+        console.log(body)
+    })
+}
 
 
 function sqlStuff(arr) {
@@ -78,11 +93,11 @@ function sqlStuff(arr) {
 
 
 function main(results) {
-    dbUtil.execSQL(`select * from alzk.ordkeys where _id = ?`, [config.KEYS.KEY_ID])
-    console.log('@')
-    // results.forEach(element => {
-    //     sqlStuff(element)
-    // });
+    // dbUtil.execSQL(`select * from alzk.ordkeys where _id = ?`, [config.KEYS.KEY_ID])
+    // console.log('@')
+    results.forEach(element => {
+        sqlStuff(element)
+    });
 }
 
 
@@ -98,9 +113,9 @@ function keyTC() {
 
 
 // accessRule
-main(results)
+// main(results)
 // TC(1)
-// console.log(config['CARDTYPE']['1'])
+processE()
 
 
 

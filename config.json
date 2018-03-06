@@ -1,7 +1,11 @@
 {
     "LOCKPARAMETERS_FILE": "/Users/kevin/Desktop/Admin Server/Software-MF-Admin/.alzkConfig/appParams-default.json",
+    "SERVER": {
+        "LOCAL": "http://127.0.0.1:5160",
+        "REMOTE": "http://192.168.0.100:5160"
+    },
     "DATABASE": {
-        "HOST": "127.0.0.1",
+        "LOCAL_HOST": "127.0.0.1",
         "PORT": 3306,
         "DB_NAME": "alzk",
         "DB_USER": "alzk",
@@ -52,7 +56,7 @@
         "NO": 0
     },
     "ACCESSRULE": {
-        "key+lockplace": "3",
+        "key+lockplace": 0,
         "key": 2,
         "lockplace": 1
     },
