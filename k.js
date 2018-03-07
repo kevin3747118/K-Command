@@ -15,7 +15,7 @@ const request = require("request")
 issue date改成前一天
 */
 
-const results = [{ 'CARDTYPE': 1, 'LOCKMODE': 'Normal', 'AREATC': 'NO', 'KEYTC': 'NO', 'ACCESSRULE': 'key+lockplace', 'OUTPUT': { 'k0': 1, 'k1': 0 } }]
+const results = [{ 'CARDTYPE': 1, 'LOCKMODE': 'Normal', 'AREATC': 'NO', 'KEYTC': 'NO', 'ACCESSRULE': 'key+lockplace', 'OUTPUT': ['k0', 'k2'] }]
 
 
 function TC(flag) {
@@ -45,19 +45,29 @@ function accessRule(cardType, status) {
 }
 
 
-
-function processE() {
-    let parms = {
-        url: config.SERVER["REMOTE"] + '/lockapi/v00000000004/e0',
-        headers: {
-            'User-Agent': 'request'
+function reqLockApi(element, cmd, kArr) {
+    request.get(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, (err, response, bodys) => {
+        let body = JSON.parse(bodys)
+        let count = 0;
+        // console.log(body)
+        if (!err && body.cmd) {
+            if (body.cmd.includes('k') && !body.index) {
+                // console.log(element.OUTPUT)
+                console.log(body.cmd)
+                if (element.OUTPUT.includes(body.cmd)) {
+                    console.log('pass !')
+                } else {
+                    console.log('fail !')
+                }
+            }
+            reqLockApi(element, body.cmd + "?status=ok", kArr)
+        } else {
+            console.log('No Command to Do !')
         }
-    }
-    console.log(parms)
-    let results = request.get(parms, (err, response, body) => {
-        console.log(body)
     })
+    // return await request.get(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, parms)
 }
+
 
 
 function sqlStuff(arr) {
@@ -93,29 +103,25 @@ function sqlStuff(arr) {
 
 
 function main(results) {
-    // dbUtil.execSQL(`select * from alzk.ordkeys where _id = ?`, [config.KEYS.KEY_ID])
-    // console.log('@')
     results.forEach(element => {
-        sqlStuff(element)
+        sqlStuff(element);
+        reqLockApi(element, 'e0')
     });
 }
 
 
 
-function keyTC() {
-    conn.query(`select * from alzk.ordkeys where _id=?`, ['fa000000000001'], (err, rows) => {
-        console.log(rows)
-        conn.end()
-    })
-    // conn.query(`update alzk.ordkeys set keytype = '@@' where _id =` confi)
-}
+// function keyTC() {
+//     conn.query(`select * from alzk.ordkeys where _id=?`, ['fa000000000001'], (err, rows) => {
+//         console.log(rows)
+//         conn.end()
+//     })
+//     // conn.query(`update alzk.ordkeys set keytype = '@@' where _id =` confi)
+// }
 
 
+main(results)
 
-// accessRule
-// main(results)
-// TC(1)
-processE()
 
 
 

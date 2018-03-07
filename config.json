@@ -1,8 +1,8 @@
 {
     "LOCKPARAMETERS_FILE": "/Users/kevin/Desktop/Admin Server/Software-MF-Admin/.alzkConfig/appParams-default.json",
-    "SERVER": {
-        "LOCAL": "http://127.0.0.1:5160",
-        "REMOTE": "http://192.168.0.100:5160"
+    "LOCKAPI": {
+        "LOCAL": "http://127.0.0.1:5160/lockapi/",
+        "REMOTE": "http://192.168.0.100:5160/lockapi/"
     },
     "DATABASE": {
         "LOCAL_HOST": "127.0.0.1",
@@ -17,6 +17,9 @@
     "AREAS": {
         "AREA_NAME": "",
         "AREA_ID": "4"
+    },
+    "LOCK": {
+        "LOCK_ID": "v00000000006/"
     },
     "CARDTYPE": {
         "1": "Tenant",
