@@ -11,11 +11,26 @@ const request = require("request")
 4. {accessRule: {key+lockplace: 0, key: 1, lockplace: 2}}
 5. {k0: {no: 0, yes: 1}}
 6. {k1: {no: 0, yes: 1}}
-
 issue date改成前一天
 */
 
-const results = [{ 'CARDTYPE': 1, 'LOCKMODE': 'Normal', 'AREATC': 'NO', 'KEYTC': 'NO', 'ACCESSRULE': 'key+lockplace', 'OUTPUT': ['k0', 'k2'] }]
+const results = [{
+    'CARDTYPE': 'Tenant', 'LOCKMODE': 'Normal', 'AREATC': 'NO',
+    'KEYTC': 'NO', 'ACCESSRULE': 'key+lockplace',
+    'EXPECT_CMD': {'k2': 0},
+    'REAL_CMD': [],
+    'RESULT': '',
+    'ERROR_MSG': ''
+}]
+
+function dateToDbStr(d) {
+    return String('0000'+d.getFullYear()).slice(-4)+"/"+
+    String('00'+(d.getMonth()+1)).slice(-2)+"/"+
+    String('00'+d.getDate()).slice(-2)+" "+
+    String('00'+d.getHours()).slice(-2)+":"+
+    String('00'+d.getMinutes()).slice(-2)+":"+
+    String('00'+d.getSeconds()).slice(-2);
+}
 
 
 function TC(flag) {
@@ -45,39 +60,53 @@ function accessRule(cardType, status) {
 }
 
 
+
 function reqLockApi(element, cmd, kArr) {
-    request.get(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, (err, response, bodys) => {
-        let body = JSON.parse(bodys)
-        let count = 0;
-        // console.log(body)
-        if (!err && body.cmd) {
-            if (body.cmd.includes('k') && !body.index) {
-                // console.log(element.OUTPUT)
-                console.log(body.cmd)
-                if (element.OUTPUT.includes(body.cmd)) {
-                    console.log('pass !')
-                } else {
-                    console.log('fail !')
+    return new Promise((resolve, reject) => {
+        request(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, (err, res, bodys) => {
+            let body = JSON.parse(bodys)
+            if (!err && body.cmd) {
+                if (body.cmd.includes('k') && !body.index) {
+                    element.REAL_CMD.push(body.cmd)
+                    if (element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
+                        element.EXPECT_CMD[body.cmd] = 1;
+                    }
+                    // if (!element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
+                    //     //test case EXPECT_CMD is different from admin server
+                    //     element.RESULT = 'FAIL';
+                    //     element.ERROR_MSG = 'Expect command is different from admin server sent'
+                    // }
                 }
+                resolve(reqLockApi(element, body.cmd + "?status=ok", kArr))
+            } else {
+                resolve('No Command to Do !')
             }
-            reqLockApi(element, body.cmd + "?status=ok", kArr)
-        } else {
-            console.log('No Command to Do !')
-        }
+        })
     })
-    // return await request.get(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, parms)
+}
+
+
+
+async function initial() {
+    let results = await dbUtil.execSQL(`select * from alzk.lockplaces where areaid=?`, [config.AREAS.AREA_ID]);
+    let lastkeyids = results[0].lastkeyids.replace(`"` + config.KEYS.KEY_ID2 + `", `, ``);
+    let lastdelids = `[]`;
+    let lastinsids = `[]`;
+    await dbUtil.execSQL(`update alzk.lockplaces set lastkeyids=?, lastdelids=?, lastinsids=? where areaid=?`,
+        [lastkeyids, lastdelids, lastinsids, config.AREAS.AREA_ID])
 }
 
 
 
 function sqlStuff(arr) {
     for (let key in arr) {
-        if (key != 'OUTPUT') {
+        if (key != 'EXPECT_CMD') {
             switch (key) {
                 case 'CARDTYPE':
-                    var cardType = config[key][arr[key]];
+                    // var cardType = config[key][arr[key]];
+                    var cardType = arr['CARDTYPE'];
                     dbUtil.execSQL(`update ordkeys set keytype=? where _id=?`,
-                        [config[key][arr[key]], config.KEYS.KEY_ID])
+                        [cardType, config.KEYS.KEY_ID2])
                     break;
                 case 'LOCKMODE':
                     config.LOCKSETTINGS['w0']['mode'] = config[key][arr[key]];
@@ -90,7 +119,7 @@ function sqlStuff(arr) {
                     break;
                 case 'KEYTC':
                     dbUtil.execSQL(`update keyareas set timecontrol=? where keyid=?`,
-                        [JSON.stringify(TC(config[key][arr[key]])), config.KEYS.KEY_ID]);
+                        [JSON.stringify(TC(config[key][arr[key]])), config.KEYS.KEY_ID2]);
                     break;
                 case 'ACCESSRULE':
                     accessRule(cardType, config[key][arr[key]])
@@ -101,29 +130,54 @@ function sqlStuff(arr) {
 }
 
 
+async function main(results) {
+    await initial();
+    results.forEach(async (ele) => {
+        await sqlStuff(ele)
+        await reqLockApi(ele, 'e0')
+        if (Object.values(ele.EXPECT_CMD).includes(0) || ele.REAL_CMD.length != Object.keys(ele.EXPECT_CMD).length ) {
+            ele.RESULT = 'FAIL';
+            ele.ERROR_MSG = 'Expected command is different from admin server sent'
+        }
+        else {
+            ele.RESULT = 'PASS'
+        }
+        let dbParms = [ele.CARDTYPE, ele.LOCKMODE, ele.AREATC, ele.KEYTC, 
+                        ele.ACCESSRULE, JSON.stringify(Object.keys(ele.EXPECT_CMD)),
+                        JSON.stringify(ele.REAL_CMD), ele.RESULT, ele.ERROR_MSG, dateToDbStr(new Date())]
 
-function main(results) {
-    results.forEach(element => {
-        sqlStuff(element);
-        reqLockApi(element, 'e0')
+        dbUtil.execSQL(`insert into cmd_test.test_results (cardtype, lockmode, areatc,
+                        keytc, accessrule, expectcmd, realcmd, testresult, errormsg, date)
+                        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, dbParms)
+        // console.log(dbParms)
     });
 }
-
-
-
-// function keyTC() {
-//     conn.query(`select * from alzk.ordkeys where _id=?`, ['fa000000000001'], (err, rows) => {
-//         console.log(rows)
-//         conn.end()
-//     })
-//     // conn.query(`update alzk.ordkeys set keytype = '@@' where _id =` confi)
-// }
-
 
 main(results)
 
 
-
+// recursive without promise&async
+// function reqLockApi(element, cmd, kArr) {
+//     request.get(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, (err, response, bodys) => {
+//         let body = JSON.parse(bodys)
+//         if (!err && body.cmd) {
+//             if (body.cmd.includes('k') && !body.index) {
+//                 // console.log(element.EXPECT_CMD)
+//                 console.log(body.cmd)
+//                 if (element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
+//                     element.EXPECT_CMD[body.cmd] = 1;
+//                 } else if (!element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
+//                     console.log('fail 1!')
+//                 } else {
+//                     console.log('fail 2!')
+//                 }
+//             }
+//             reqLockApi(element, body.cmd + "?status=ok", kArr)
+//         } else {
+//             console.log('No Command to Do !')
+//         }   
+//     })
+// }
 
 
 

@@ -6,13 +6,15 @@
     },
     "DATABASE": {
         "LOCAL_HOST": "127.0.0.1",
+        "REMOTE_HOST": "192.168.0.100",
         "PORT": 3306,
         "DB_NAME": "alzk",
         "DB_USER": "alzk",
         "DB_PWD": "alzk"
     },
     "KEYS": {
-        "KEY_ID": "fa000000000001"
+        "KEY_ID1": "fa000000000001",
+        "KEY_ID2": "042e5cb2075980"
     },
     "AREAS": {
         "AREA_NAME": "",
