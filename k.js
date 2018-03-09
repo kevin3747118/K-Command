@@ -17,19 +17,19 @@ issue date改成前一天
 const results = [{
     'CARDTYPE': 'Tenant', 'LOCKMODE': 'Normal', 'AREATC': 'NO',
     'KEYTC': 'NO', 'ACCESSRULE': 'key+lockplace',
-    'EXPECT_CMD': {'k2': 0},
+    'EXPECT_CMD': { 'k2': 0 },
     'REAL_CMD': [],
     'RESULT': '',
     'ERROR_MSG': ''
 }]
 
 function dateToDbStr(d) {
-    return String('0000'+d.getFullYear()).slice(-4)+"/"+
-    String('00'+(d.getMonth()+1)).slice(-2)+"/"+
-    String('00'+d.getDate()).slice(-2)+" "+
-    String('00'+d.getHours()).slice(-2)+":"+
-    String('00'+d.getMinutes()).slice(-2)+":"+
-    String('00'+d.getSeconds()).slice(-2);
+    return String('0000' + d.getFullYear()).slice(-4) + "/" +
+        String('00' + (d.getMonth() + 1)).slice(-2) + "/" +
+        String('00' + d.getDate()).slice(-2) + " " +
+        String('00' + d.getHours()).slice(-2) + ":" +
+        String('00' + d.getMinutes()).slice(-2) + ":" +
+        String('00' + d.getSeconds()).slice(-2);
 }
 
 
@@ -100,31 +100,29 @@ async function initial() {
 
 function sqlStuff(arr) {
     for (let key in arr) {
-        if (key != 'EXPECT_CMD') {
-            switch (key) {
-                case 'CARDTYPE':
-                    // var cardType = config[key][arr[key]];
-                    var cardType = arr['CARDTYPE'];
-                    dbUtil.execSQL(`update ordkeys set keytype=? where _id=?`,
-                        [cardType, config.KEYS.KEY_ID2])
-                    break;
-                case 'LOCKMODE':
-                    config.LOCKSETTINGS['w0']['mode'] = config[key][arr[key]];
-                    dbUtil.execSQL(`update lockplaces set locksettings=? where _id=?`,
-                        [JSON.stringify(config.LOCKSETTINGS), config.AREAS.AREA_ID])
-                    break;
-                case 'AREATC':
-                    dbUtil.execSQL(`update areas set timecontrol=? where _id=?`,
-                        [JSON.stringify(TC(config[key][arr[key]])), config.AREAS.AREA_ID]);
-                    break;
-                case 'KEYTC':
-                    dbUtil.execSQL(`update keyareas set timecontrol=? where keyid=?`,
-                        [JSON.stringify(TC(config[key][arr[key]])), config.KEYS.KEY_ID2]);
-                    break;
-                case 'ACCESSRULE':
-                    accessRule(cardType, config[key][arr[key]])
-                    break;
-            }
+        switch (key) {
+            case 'CARDTYPE':
+                // var cardType = config[key][arr[key]];
+                var cardType = arr['CARDTYPE'];
+                dbUtil.execSQL(`update ordkeys set keytype=? where _id=?`,
+                    [cardType, config.KEYS.KEY_ID2])
+                break;
+            case 'LOCKMODE':
+                config.LOCKSETTINGS['w0']['mode'] = config[key][arr[key]];
+                dbUtil.execSQL(`update lockplaces set locksettings=? where _id=?`,
+                    [JSON.stringify(config.LOCKSETTINGS), config.AREAS.AREA_ID])
+                break;
+            case 'AREATC':
+                dbUtil.execSQL(`update areas set timecontrol=? where _id=?`,
+                    [JSON.stringify(TC(config[key][arr[key]])), config.AREAS.AREA_ID]);
+                break;
+            case 'KEYTC':
+                dbUtil.execSQL(`update keyareas set timecontrol=? where keyid=?`,
+                    [JSON.stringify(TC(config[key][arr[key]])), config.KEYS.KEY_ID2]);
+                break;
+            case 'ACCESSRULE':
+                accessRule(cardType, config[key][arr[key]])
+                break;
         }
     }
 }
@@ -135,16 +133,16 @@ async function main(results) {
     results.forEach(async (ele) => {
         await sqlStuff(ele)
         await reqLockApi(ele, 'e0')
-        if (Object.values(ele.EXPECT_CMD).includes(0) || ele.REAL_CMD.length != Object.keys(ele.EXPECT_CMD).length ) {
+        if (Object.values(ele.EXPECT_CMD).includes(0) || ele.REAL_CMD.length != Object.keys(ele.EXPECT_CMD).length) {
             ele.RESULT = 'FAIL';
             ele.ERROR_MSG = 'Expected command is different from admin server sent'
         }
         else {
             ele.RESULT = 'PASS'
         }
-        let dbParms = [ele.CARDTYPE, ele.LOCKMODE, ele.AREATC, ele.KEYTC, 
-                        ele.ACCESSRULE, JSON.stringify(Object.keys(ele.EXPECT_CMD)),
-                        JSON.stringify(ele.REAL_CMD), ele.RESULT, ele.ERROR_MSG, dateToDbStr(new Date())]
+        let dbParms = [ele.CARDTYPE, ele.LOCKMODE, ele.AREATC, ele.KEYTC,
+        ele.ACCESSRULE, JSON.stringify(Object.keys(ele.EXPECT_CMD)),
+        JSON.stringify(ele.REAL_CMD), ele.RESULT, ele.ERROR_MSG, dateToDbStr(new Date())]
 
         dbUtil.execSQL(`insert into cmd_test.test_results (cardtype, lockmode, areatc,
                         keytc, accessrule, expectcmd, realcmd, testresult, errormsg, date)
