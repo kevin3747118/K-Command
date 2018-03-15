@@ -17,7 +17,7 @@ issue date改成前一天
 const results = [{
     'CARDTYPE': 'Tenant', 'LOCKMODE': 'Normal', 'AREATC': 'NO',
     'KEYTC': 'NO', 'ACCESSRULE': 'key+lockplace',
-    'EXPECT_CMD': { 'k2': 0 },
+    'EXPECT_CMD': { 'k1': 0 },
     'REAL_CMD': [],
     'RESULT': '',
     'ERROR_MSG': ''
@@ -65,6 +65,7 @@ function reqLockApi(element, cmd, kArr) {
     return new Promise((resolve, reject) => {
         request(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, (err, res, bodys) => {
             let body = JSON.parse(bodys)
+            // console.log(body)
             if (!err && body.cmd) {
                 if (body.cmd.includes('k') && !body.index) {
                     element.REAL_CMD.push(body.cmd)
@@ -147,7 +148,7 @@ async function main(results) {
         dbUtil.execSQL(`insert into cmd_test.test_results (cardtype, lockmode, areatc,
                         keytc, accessrule, expectcmd, realcmd, testresult, errormsg, date)
                         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, dbParms)
-        // console.log(dbParms)
+        console.log(dbParms)
     });
 }
 
