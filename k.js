@@ -1,4 +1,4 @@
-const dbUtil = require('./db.js')
+const util = require('./db.js')
 const async = require('async');
 const fs = require('fs');
 const config = require("./config.json")
@@ -22,15 +22,6 @@ const results = [{
     'RESULT': '',
     'ERROR_MSG': ''
 }]
-
-function dateToDbStr(d) {
-    return String('0000' + d.getFullYear()).slice(-4) + "/" +
-        String('00' + (d.getMonth() + 1)).slice(-2) + "/" +
-        String('00' + d.getDate()).slice(-2) + " " +
-        String('00' + d.getHours()).slice(-2) + ":" +
-        String('00' + d.getMinutes()).slice(-2) + ":" +
-        String('00' + d.getSeconds()).slice(-2);
-}
 
 
 function TC(flag) {
@@ -89,11 +80,11 @@ function reqLockApi(element, cmd, kArr) {
 
 
 async function initial() {
-    let results = await dbUtil.execSQL(`select * from alzk.lockplaces where areaid=?`, [config.AREAS.AREA_ID]);
+    let results = await util.execSQL(`select * from alzk.lockplaces where areaid=?`, [config.AREAS.AREA_ID]);
     let lastkeyids = results[0].lastkeyids.replace(`"` + config.KEYS.KEY_ID2 + `", `, ``);
     let lastdelids = `[]`;
     let lastinsids = `[]`;
-    await dbUtil.execSQL(`update alzk.lockplaces set lastkeyids=?, lastdelids=?, lastinsids=? where areaid=?`,
+    await util.execSQL(`update alzk.lockplaces set lastkeyids=?, lastdelids=?, lastinsids=? where areaid=?`,
         [lastkeyids, lastdelids, lastinsids, config.AREAS.AREA_ID])
 }
 
@@ -105,20 +96,20 @@ function sqlStuff(arr) {
             case 'CARDTYPE':
                 // var cardType = config[key][arr[key]];
                 var cardType = arr['CARDTYPE'];
-                dbUtil.execSQL(`update ordkeys set keytype=? where _id=?`,
+                util.execSQL(`update ordkeys set keytype=? where _id=?`,
                     [cardType, config.KEYS.KEY_ID2])
                 break;
             case 'LOCKMODE':
                 config.LOCKSETTINGS['w0']['mode'] = config[key][arr[key]];
-                dbUtil.execSQL(`update lockplaces set locksettings=? where _id=?`,
+                util.execSQL(`update lockplaces set locksettings=? where _id=?`,
                     [JSON.stringify(config.LOCKSETTINGS), config.AREAS.AREA_ID])
                 break;
             case 'AREATC':
-                dbUtil.execSQL(`update areas set timecontrol=? where _id=?`,
+                util.execSQL(`update areas set timecontrol=? where _id=?`,
                     [JSON.stringify(TC(config[key][arr[key]])), config.AREAS.AREA_ID]);
                 break;
             case 'KEYTC':
-                dbUtil.execSQL(`update keyareas set timecontrol=? where keyid=?`,
+                util.execSQL(`update keyareas set timecontrol=? where keyid=?`,
                     [JSON.stringify(TC(config[key][arr[key]])), config.KEYS.KEY_ID2]);
                 break;
             case 'ACCESSRULE':
@@ -143,9 +134,9 @@ async function main(results) {
         }
         let dbParms = [ele.CARDTYPE, ele.LOCKMODE, ele.AREATC, ele.KEYTC,
         ele.ACCESSRULE, JSON.stringify(Object.keys(ele.EXPECT_CMD)),
-        JSON.stringify(ele.REAL_CMD), ele.RESULT, ele.ERROR_MSG, dateToDbStr(new Date())]
+        JSON.stringify(ele.REAL_CMD), ele.RESULT, ele.ERROR_MSG, util.dateToDbStr(new Date())]
 
-        dbUtil.execSQL(`insert into cmd_test.test_results (cardtype, lockmode, areatc,
+        util.execSQL(`insert into cmd_test.test_results (cardtype, lockmode, areatc,
                         keytc, accessrule, expectcmd, realcmd, testresult, errormsg, date)
                         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, dbParms)
         console.log(dbParms)

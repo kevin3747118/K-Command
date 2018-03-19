@@ -20,6 +20,10 @@
         "AREA_NAME": "",
         "AREA_ID": "4"
     },
+    "LOCKPLACES": {
+        "LOCKPLACE_NAME": "",
+        "LOCKPLACE_ID": "6"
+    },
     "LOCK": {
         "LOCK_ID": "v00000000006/"
     },

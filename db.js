@@ -20,7 +20,7 @@ function getConn() {
 }
 
 
-moduleUtil.execSQL = async function (sqlStr, parms) {
+moduleUtil.execSQL = async function(sqlStr, parms) {
     //parms must be array
     let conn = await getConn();
     return new Promise((resolve, reject) => {
@@ -29,6 +29,16 @@ moduleUtil.execSQL = async function (sqlStr, parms) {
             else resolve(rows)
         })
     })
+}
+
+
+moduleUtil.dateToDbStr = function(d) {
+    return String('0000' + d.getFullYear()).slice(-4) + "/" +
+        String('00' + (d.getMonth() + 1)).slice(-2) + "/" +
+        String('00' + d.getDate()).slice(-2) + " " +
+        String('00' + d.getHours()).slice(-2) + ":" +
+        String('00' + d.getMinutes()).slice(-2) + ":" +
+        String('00' + d.getSeconds()).slice(-2);
 }
 
 
