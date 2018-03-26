@@ -64,10 +64,11 @@ async function sqlStuff() {
 
 
 async function initial() {
-    let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status != 0 and cmd in ('k0', 'k1', 'k2')`, [config.LOCKPLACES.LOCKPLACE_ID])
+    let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status != 0 and cmd in ('k2')`, [config.LOCKPLACES.LOCKPLACE_ID])
     results.forEach(element => {
         parm[element.cmd] = element.status
     });
+    //while condition
     if (Object.values(parm).indexOf(1) > -1 || Object.values(parm).indexOf(2) > -1) {
         console.log('waiting... ')
         console.log(parm)
@@ -85,6 +86,7 @@ async function initial() {
                 util.execSQL(`delete from alzk.keyareas where keyid = ?`, [ele.keyid])
             })
         } else {
+            console.log('2')
             await genKeys()
         }
 

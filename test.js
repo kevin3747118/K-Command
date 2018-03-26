@@ -1,34 +1,34 @@
 // [4,2,3]
 // [4,2,1]
 
-var checkPossibility = function (nums) {
-    let nums2 = nums;
-    let status
-    let status2 = true;
-    for (let i = 0; i < nums.length; i++) {
-        if (nums[i] >= nums[i + 1]) {
-            nums[i] = nums[i + 1] - 1;
-            status = false;
-            break;
-        }
-    };
-    if (!status) {
-        for (let i = 0; i < nums.length; i++) {
-            if (nums[i] >= nums[i + 1]) {
-                status2 = false;
-                return false;
-            } 
-        };
-    } else {
-        return true
-    }
-    if (status2) return true
-};
+// var checkPossibility = function (nums) {
+//     let nums2 = nums;
+//     let status
+//     let status2 = true;
+//     for (let i = 0; i < nums.length; i++) {
+//         if (nums[i] >= nums[i + 1]) {
+//             nums[i] = nums[i + 1] - 1;
+//             status = false;
+//             break;
+//         }
+//     };
+//     if (!status) {
+//         for (let i = 0; i < nums.length; i++) {
+//             if (nums[i] >= nums[i + 1]) {
+//                 status2 = false;
+//                 return false;
+//             } 
+//         };
+//     } else {
+//         return true
+//     }
+//     if (status2) return true
+// };
 
 
-a = [1,3,2]
+// a = [1,3,2]
 
-checkPossibility(a)
+// checkPossibility(a)
 
 // class Polygon {
 //     constructor(height) {
@@ -57,3 +57,10 @@ checkPossibility(a)
 // sq.setHeight = 55
 // console.log(sq.getHeight)
 // // console.log(square.height); //100
+
+
+var schedule = require('node-schedule');
+
+var j = schedule.scheduleJob('/1 * * * * *', function(){
+    console.log('@_@');
+  });

@@ -43,7 +43,6 @@ function TC(flag) {
 }
 
 
-
 function accessRule(cardType, status) {
     let readFile = JSON.parse(fs.readFileSync(config.LOCKPARAMETERS_FILE))
     readFile.ACCESS_RULE['Unit'][cardType] = status;
@@ -51,29 +50,41 @@ function accessRule(cardType, status) {
 }
 
 
-
 function reqLockApi(element, cmd, kArr) {
     return new Promise((resolve, reject) => {
-        request(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, (err, res, bodys) => {
-            let body = JSON.parse(bodys)
-            // console.log(body)
-            if (!err && body.cmd) {
-                if (body.cmd.includes('k') && !body.index) {
-                    element.REAL_CMD.push(body.cmd)
-                    if (element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
-                        element.EXPECT_CMD[body.cmd] = 1;
-                    }
-                    // if (!element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
-                    //     //test case EXPECT_CMD is different from admin server
-                    //     element.RESULT = 'FAIL';
-                    //     element.ERROR_MSG = 'Expect command is different from admin server sent'
-                    // }
-                }
-                resolve(reqLockApi(element, body.cmd + "?status=ok", kArr))
-            } else {
-                resolve('No Command to Do !')
+        let options = {
+            url: config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd,
+            agentOptions: {
+                rejectUnauthorized: false
             }
-        })
+        };
+        // request(config.LOCKAPI["REMOTE"] + config.LOCK['LOCK_ID'] + cmd, (err, res, bodys) => {
+        try {
+            request.get(options, (err, res, bodys) => {
+                if (err) reject(err)
+                else {
+                    let body = JSON.parse(bodys)
+                    if (!err && body.cmd) {
+                        if (body.cmd.includes('k') && !body.index) {
+                            element.REAL_CMD.push(body.cmd)
+                            if (element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
+                                element.EXPECT_CMD[body.cmd] = 1;
+                            }
+                            // if (!element.EXPECT_CMD.hasOwnProperty(body.cmd)) {
+                            //     //test case EXPECT_CMD is different from admin server
+                            //     element.RESULT = 'FAIL';
+                            //     element.ERROR_MSG = 'Expect command is different from admin server sent'
+                            // }
+                        }
+                        resolve(reqLockApi(element, body.cmd + "?status=ok", kArr))
+                    } else {
+                        resolve('No Command to Do !')
+                    }
+                }
+            })
+        } catch (err) {
+            reject(err)
+        }
     })
 }
 
@@ -123,23 +134,27 @@ function sqlStuff(arr) {
 async function main(results) {
     await initial();
     results.forEach(async (ele) => {
-        await sqlStuff(ele)
-        await reqLockApi(ele, 'e0')
-        if (Object.values(ele.EXPECT_CMD).includes(0) || ele.REAL_CMD.length != Object.keys(ele.EXPECT_CMD).length) {
-            ele.RESULT = 'FAIL';
-            ele.ERROR_MSG = 'Expected command is different from admin server sent'
-        }
-        else {
-            ele.RESULT = 'PASS'
-        }
-        let dbParms = [ele.CARDTYPE, ele.LOCKMODE, ele.AREATC, ele.KEYTC,
-        ele.ACCESSRULE, JSON.stringify(Object.keys(ele.EXPECT_CMD)),
-        JSON.stringify(ele.REAL_CMD), ele.RESULT, ele.ERROR_MSG, util.dateToDbStr(new Date())]
+        try {
+            await sqlStuff(ele)
+            await reqLockApi(ele, 'e0')
+            if (Object.values(ele.EXPECT_CMD).includes(0) || ele.REAL_CMD.length != Object.keys(ele.EXPECT_CMD).length) {
+                ele.RESULT = 'FAIL';
+                ele.ERROR_MSG = 'Expected command is different from admin server sent'
+            }
+            else {
+                ele.RESULT = 'PASS'
+            }
+            let dbParms = [ele.CARDTYPE, ele.LOCKMODE, ele.AREATC, ele.KEYTC,
+            ele.ACCESSRULE, JSON.stringify(Object.keys(ele.EXPECT_CMD)),
+            JSON.stringify(ele.REAL_CMD), ele.RESULT, ele.ERROR_MSG, util.dateToDbStr(new Date())]
 
-        util.execSQL(`insert into cmd_test.test_results (cardtype, lockmode, areatc,
-                        keytc, accessrule, expectcmd, realcmd, testresult, errormsg, date)
-                        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, dbParms)
-        console.log(dbParms)
+            await util.execSQL(`insert into alzk_test.cmd_test (cardtype, lockmode, areatc,
+                            keytc, accessrule, expectcmd, realcmd, testresult, errormsg, date)
+                            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, dbParms)
+            console.log(dbParms)
+        } catch (err) {
+            console.log(err)
+        }
     });
 }
 
