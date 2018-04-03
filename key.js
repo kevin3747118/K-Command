@@ -18,16 +18,6 @@ const cmdK0 = new LockCommand({
 
 */
 
-// function genKeys() {
-//     var text = "";
-//     var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
-
-//     for (var i = 0; i < 15; i++){
-//       text += possible.charAt(Math.floor(Math.random() * possible.length));
-//   }
-//   return text;
-// }
-
 let parm = { 'key': '' }
 
 
@@ -35,9 +25,11 @@ function genKeys() {
     return new Promise((resolve, reject) => {
         const keyId = crypto.randomBytes(7).toString('hex');
         parm.key = keyId;
-        resolve(keyId)
+        // resolve(keyId)
+        resolve()
     })
 }
+
 
 
 function genDates(flag) {
@@ -49,11 +41,12 @@ function genDates(flag) {
     else return dataNow
 }
 
-// status = 3
+
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
 
 
 async function sqlStuff() {
@@ -63,43 +56,40 @@ async function sqlStuff() {
 }
 
 
-async function initial() {
-    let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status != 0 and cmd in ('k2')`, [config.LOCKPLACES.LOCKPLACE_ID])
-    results.forEach(element => {
-        parm[element.cmd] = element.status
-    });
-    //while condition
-    if (Object.values(parm).indexOf(1) > -1 || Object.values(parm).indexOf(2) > -1) {
-        console.log('waiting... ')
-        console.log(parm)
-        await sleep(4000)
-        initial()
-    }
-    else {
-        let delKey = await util.execSQL(`select keyid from alzk.keyareas where areaid = ?`, [config.AREAS.AREA_ID])
-        let delParm = []
-        if (delKey.length != 0) {
-            delKey.forEach(ele => {
-                console.log('1')
-                delParm.push(ele.keyid)
-                util.execSQL(`delete from alzk.ordkeys where _id = ?`, [ele.keyid]);
-                util.execSQL(`delete from alzk.keyareas where keyid = ?`, [ele.keyid])
-            })
-        } else {
-            console.log('2')
-            await genKeys()
-        }
 
-        // console.log(delParm)
-        // await util.execSQL(`delete from alzk.ordkeys where _id in (?)`, [delParm])
-        // await util.execSQL(`delete from alzk.keyareas where keyid in (?)`, [delParm])
-        // console.log('@')
-        // await genKeys()
+async function initial() {
+    let count = 0;
+    while (count == 0) {
+        let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status != 0 and cmd in ('k2')`, [config.LOCKPLACES.LOCKPLACE_ID])
+        results.forEach(element => {
+            parm[element.cmd] = element.status
+        });
+        if (Object.values(parm).indexOf(1) > -1 || Object.values(parm).indexOf(2) > -1) {
+            console.log('waiting... ')
+            await sleep(5000)
+        } else {
+            let delKey = await util.execSQL(`select keyid from alzk.keyareas where areaid = ?`, [config.AREAS.AREA_ID])
+            let delParm = []
+            if (delKey.length != 0) {
+                delKey.forEach(ele => {
+                    delParm.push(ele.keyid)
+                    util.execSQL(`delete from alzk.ordkeys where _id = ?`, [ele.keyid]);
+                    util.execSQL(`delete from alzk.keyareas where keyid = ?`, [ele.keyid])
+                })
+                await genKeys()
+                count = 1;
+            } else {
+                await genKeys()
+                count = 1;
+            }
+        }
     }
 
 }
 
-//紀錄次數
+
+
+//record counts
 function record() {
 
 }
@@ -108,7 +98,7 @@ function record() {
 async function main() {
     await initial()
     await sqlStuff()
-    console.log('done')
+    console.log(parm)
 }
 
 main()
