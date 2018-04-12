@@ -2,4 +2,6 @@
 *.csv
 *.xlsx
 *~
+.eslintrc*
+t[T]est*
 .vscode

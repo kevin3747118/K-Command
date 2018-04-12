@@ -52,15 +52,15 @@
 // }
 
 // // let square = new Polygon(13, 10);
-// let sq = new Polygon('@@')
+// let sq = new Polygon("@@")
 
 // sq.setHeight = 55
 // console.log(sq.getHeight)
 // // console.log(square.height); //100
 
 
-var schedule = require('node-schedule');
+// var schedule = require("node-schedule");
 
-var j = schedule.scheduleJob('/1 * * * * *', function(){
-    console.log('@_@');
-  });
+// var j = schedule.scheduleJob("/1 * * * * *", function(){
+//     console.log("@_@");
+//   });

@@ -1,5 +1,6 @@
 {
     "LOCKPARAMETERS_FILE": "/Users/kevin/Desktop/Admin Server/Software-MF-Admin/.alzkConfig/appParams-default.json",
+    "RECORD_FILE": "record.txt",
     "LOCKAPI": {
         "LOCAL": "https://127.0.0.1:5160/lockapi/",
         "REMOTE": "https://192.168.0.100:5160/lockapi/"
