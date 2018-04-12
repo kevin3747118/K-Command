@@ -102,6 +102,7 @@ async function main() {
 		await initial();
 		await sqlStuff();
 		await record();
+		//
 	}
 }
 
