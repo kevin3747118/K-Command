@@ -1,4 +1,4 @@
-const util = require("./db.js");
+const util = require("./util.js");
 const async = require("async");
 const config = require("./config.json");
 const fs = require("fs");
@@ -98,11 +98,11 @@ async function record() {
 
 
 async function main() {
+	//for or while loop 
 	for (let i = 0; i <= 4; i++) {
 		await initial();
 		await sqlStuff();
 		await record();
-		//
 	}
 }
 

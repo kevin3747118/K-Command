@@ -1,4 +1,4 @@
-const util = require("./db.js");
+const util = require("./util.js");
 const async = require("async");
 const fs = require("fs");
 const config = require("./config.json");
