@@ -5,3 +5,4 @@
 .eslintrc*
 t[T]est*
 .vscode
+config.json

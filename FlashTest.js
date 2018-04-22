@@ -4,106 +4,140 @@ const config = require("./config.json");
 const fs = require("fs");
 const crypto = require("crypto");
 
-/*
-1. generate virtual key
-2. save key to lock command
 
-const cmdK0 = new LockCommand({
-                        lockPlaceId : self._id, 
-                        cmd:"k0",
-                        sendData : sendData,
-                        k0Index : -2,
-                        status : cmdStatus
-                    })
+// const cmdK0 = new LockCommand({
+//                         lockPlaceId : self._id, 
+//                         cmd:"k0",
+//                         sendData : sendData,
+//                         k0Index : -2,
+//                         status : cmdStatus
+//                     })
 
-*/
+
 
 let parm = { "key": "", "count": 0 };
+let mailOptions = {
+  from: `"${config.EMAIL.EMAIL_FROM_DESC}" <${config.EMAIL.EMAIL_FROM_ADDR}>`,
+  to: `kevin@alzk.com.tw;lintungwei@gmail.com;vincenthpchou@gmail.com;gavin@alzk.com.tw;cavin@alzk.com.tw`,
+  subject: ``
+};
+let start = 0;
 let dirname = __dirname;
 
-function genKeys() {
-	return new Promise((resolve, reject) => {
-		const keyId = crypto.randomBytes(7).toString("hex");
-		parm.key = keyId;
-		// resolve(keyId)
-		resolve();
-	});
+
+
+//record counts
+async function record() {
+  parm.count += 1;
+  fs.writeFile(dirname + "/" + config.RECORD_FILE, parm.count, (err) => {
+    if (err) throw err;
+  });
+  if (parm.count / 3000 === 0) {
+    mailOptions.subject = `Flash Memory Write : ${parm.count} times (No Content)`;
+    await util.Mailer(mailOptions);
+  }
+}
+
+
+async function genKeys() {
+  return new Promise((resolve, reject) => {
+    const keyId = crypto.randomBytes(7).toString("hex");
+    parm.key = keyId;
+    console.log(parm)
+    resolve();
+  });
 }
 
 
 
 function genDates(flag) {
-	let date = new Date();
-	let dataNow = util.dateToDbStr(date);
-	if (flag) {
-		return dataNow.replace(date.getFullYear(), date.getFullYear() + flag);
-	}
-	else return dataNow;
+  let date = new Date();
+  let dataNow = util.dateToDbStr(date);
+  if (flag) {
+    return dataNow.replace(date.getFullYear(), date.getFullYear() + flag);
+  }
+  else return dataNow;
 }
 
 
 
 function sleep(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
 
 async function sqlStuff() {
-	await util.execSQL(`insert into alzk.ordkeys (_id, keytype, keystatus, onetimepass, createdate, expiredate, timecontrol, lastreporttime) 
+  await util.execSQL(`insert into alzk.ordkeys (_id, keytype, keystatus, onetimepass, createdate, expiredate, timecontrol, lastreporttime) 
         values (?, ?, ?, ?, ?, ?, ?, ?)`, [parm.key, "Tenant", 0, "N", genDates(), genDates(1), "[]", genDates()]);
-	await util.execSQL(`insert into alzk.keyareas values (?, ?, ?, ?)`, [config.AREAS.AREA_ID, parm.key, "[]", "N"]);
+  await util.execSQL(`insert into alzk.keyareas values (?, ?, ?, ?)`, [config.AREAS.AREA_ID, parm.key, "[]", "N"]);
 }
 
 
 
 async function initial() {
-	let count = 0;
-	while (count == 0) {
-		let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status != 0 and cmd in ("k2")`, [config.LOCKPLACES.LOCKPLACE_ID]);
-		results.forEach(element => {
-			parm[element.cmd] = element.status;
-		});
-		if (Object.values(parm).indexOf(1) > -1 || Object.values(parm).indexOf(2) > -1) {
-			console.log("waiting...");
-			await sleep(5000);
-		} else {
-			let delKey = await util.execSQL(`select keyid from alzk.keyareas where areaid = ?`, [config.AREAS.AREA_ID]);
-			let delParm = [];
-			if (delKey.length != 0) {
-				delKey.forEach(ele => {
-					delParm.push(ele.keyid);
-					util.execSQL(`delete from alzk.ordkeys where _id = ?`, [ele.keyid]);
-					util.execSQL(`delete from alzk.keyareas where keyid = ?`, [ele.keyid]);
-				});
-				await genKeys();
-				count = 1;
-			} else {
-				await genKeys();
-				count = 1;
-			}
-		}
-	}
+  return new Promise(async (resolve, reject) => {
+    let count = 0;
+    let cmd = [];
 
-}
+    // if (start === 0) {
+    //   await genKeys();
+    //   await sqlStuff();
+    //   start = 1;
+    // }
 
-
-//record counts
-async function record() {
-	parm.count += 1;
-	fs.writeFile(dirname + "/" + config.RECORD_FILE, parm.count, (err) => {
-		if (err) throw err;
-	});
+    while (count == 0) {
+      let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status in (2) and cmd in ("k2")`, [config.LOCKPLACES.LOCKPLACE_ID]);
+      if (results.length !== 0) {
+        console.log("waiting...");
+        await sleep(2000);
+      } else {
+        count = 1;
+      }
+    }
+    await record();
+    let delKey = await util.execSQL(`select keyid from alzk.keyareas where areaid = ?`, [config.AREAS.AREA_ID]);
+    let delParm = [];
+    if (delKey.length != 0) {
+      delKey.forEach(ele => {
+        delParm.push(ele.keyid);
+        util.execSQL(`delete from alzk.ordkeys where _id = ?`, [ele.keyid]);
+        util.execSQL(`delete from alzk.keyareas where keyid = ?`, [ele.keyid]);
+      });
+    }
+    console.log('delete finished')
+    resolve()
+  })
 }
 
 
 async function main() {
-	//for or while loop 
-	for (let i = 0; i <= 4; i++) {
-		await initial();
-		await sqlStuff();
-		await record();
-	}
+  while(true) {
+    try {
+      await initial();
+      await genKeys();
+      await sqlStuff();
+      await sleep(9000);
+    } catch (err) {
+      let mailOptions = {
+        from: `"${config.EMAIL.EMAIL_FROM_DESC}" <${config.EMAIL.EMAIL_FROM_ADDR}>`,
+        to: `kevin@alzk.com.tw;`,
+        subject: err
+      };
+      await util.Mailer(mailOptions);
+    }
+
+  }
+
+  // while (true) {
+  //   try {
+  //     await initial();
+  //     await genKeys();
+  //     await sqlStuff();
+  //   } catch (err) {
+  //     console.log(err)
+  //   }
+  // }
 }
 
 main();

@@ -9,7 +9,7 @@ const config = require("./config.json");
 // ownerEmail:""
 // ownerFirstName:""
 // ownerLastName:""
-// ownerMiddleName:""
+// ownerMiddleName:""b
 // ownerName:""
 // ownerPhone:""
 // ownerPosition:""
@@ -33,8 +33,10 @@ const config = require("./config.json");
 
 
 ```
-2. 初始發 400 張卡，持續更換、新增 guest/staff/vendor/temp/unit 卡，直到上限值，expire date 為發卡時間後的 30 分鐘，強迫 k2
-3. 初始發 200 張卡，持續更換、新增 guest/staff/vendor/temp/unit 卡，直到上限值，expire date 為發卡時間後的 30 分鐘，強迫 k2
+2. 初始發 400 張卡，持續更換 guest/vendor/temp 卡，
+  直到上限值，expire date 為發卡時間後的 30 分鐘，強迫 k2
+3. 初始發 200 張卡，持續更換、新增 guest/staff/vendor/temp/unit 卡，
+  直到上限值，expire date 為發卡時間後的 30 分鐘，強迫 k2
 ```
 
 async function genKeyInfo(idArr) {
@@ -44,6 +46,7 @@ async function genKeyInfo(idArr) {
     keyObj._id = util.genRandomKeys();
     keyObj.expireDate = util.dateToDbStr(new Date(), 40);
     keyObj.createDate = util.dateToDbStr(new Date());
+    keyObj.keyType = "Tenant",
     keyObj.keyAreas = [];
     keyObj.timeControl = [];
     idArr.forEach((id) => {
@@ -59,7 +62,15 @@ async function getArea() {
   return results;
 }
 
-// function 隨機選出 guest/staff/vendor/temp/unit 卡
+
+async function genKeys() {
+	return new Promise((resolve, reject) => {
+		const mission = crypto.randomBytes(7).toString("hex");
+		parm.key = keyId;
+		// resolve(keyId)
+		resolve();
+	});
+}
 
 
 async function main() {

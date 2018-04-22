@@ -6,7 +6,10 @@ const request = require("request");
 
 const moduleUtil = exports;
 
+const utilGV = {}
+
 function getConn() {
+  // host: config.DATABASE.REMOTE_HOST,
   try {
     var conn = mysql.createConnection({
       host: config.DATABASE.REMOTE_HOST,
@@ -15,7 +18,8 @@ function getConn() {
       password: config.DATABASE.DB_PWD,
       database: config.DATABASE.DB_NAME,
     });
-    return conn;
+    utilGV.conn = conn;
+    return
   } catch (err) {
     console.log(err);
   }
@@ -24,9 +28,9 @@ function getConn() {
 
 moduleUtil.execSQL = async function (sqlStr, parms) {
   //parms must be array
-  let conn = await getConn();
+  // let conn = await getConn();
   return new Promise((resolve, reject) => {
-    conn.query(sqlStr, parms, (err, rows) => {
+    utilGV.conn.query(sqlStr, parms, (err, rows) => {
       if (err) reject(err);
       else resolve(rows);
     });
@@ -51,7 +55,7 @@ moduleUtil.genRandomKeys = function () {
 }
 
 
-module.reqAPI = function () {
+moduleUtil.reqAPI = function () {
   return new Promise((resolve, reject) => {
     let options = {
       url: config.LOCKAPI["REMOTE"] + config.LOCK["LOCK_ID"] + cmd,
@@ -65,6 +69,33 @@ module.reqAPI = function () {
   })
 }
 
+moduleUtil.Mailer = function (mailOptions) {
+  let transporter = require('nodemailer').createTransport({
+    service: config.EMAIL.EMAIL_SERVICE,
+    auth: {
+      user: config.EMAIL.EMAIL_USER,
+      pass: config.EMAIL.EMAIL_PWD
+    },
+    pool: true,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 2
+  });
 
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (err, res) => {
+      if (err) {
+        if (config.EMAIL.EMAIL_RETRY)
+          setTimeout(() => { this.Mailer(a, () => { }); }, config.EMAIL.EMAIL_RETRY_DELAY);
+        resolve();
+      } else {
+        resolve();
+      }
+    });
+  })
+}
+
+getConn();
+// moduleUtil.utilGV = utilGV;
 
 
