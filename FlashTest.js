@@ -15,7 +15,7 @@ const crypto = require("crypto");
 
 
 
-let parm = { "key": "", "count": 0 };
+let parm = { "key": "", "count": 6733 };
 let mailOptions = {
   from: `"${config.EMAIL.EMAIL_FROM_DESC}" <${config.EMAIL.EMAIL_FROM_ADDR}>`,
   to: `kevin@alzk.com.tw;lintungwei@gmail.com;vincenthpchou@gmail.com;gavin@alzk.com.tw;cavin@alzk.com.tw`,
@@ -32,7 +32,7 @@ async function record() {
   fs.writeFile(dirname + "/" + config.RECORD_FILE, parm.count, (err) => {
     if (err) throw err;
   });
-  if (parm.count / 3000 === 0) {
+  if (parm.count / 7000 === 1) {
     mailOptions.subject = `Flash Memory Write : ${parm.count} times (No Content)`;
     await util.Mailer(mailOptions);
   }
