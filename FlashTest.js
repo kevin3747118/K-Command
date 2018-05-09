@@ -87,10 +87,10 @@ async function initial() {
     // }
 
     while (count == 0) {
-      let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status in (2) and cmd in ("k2")`, [config.LOCKPLACES.LOCKPLACE_ID]);
-      if (results.length !== 0) {
+      let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status in (3) and cmd in ("k2")`, [config.LOCKPLACES.LOCKPLACE_ID]);
+      if (results.length === 0) {
         console.log("waiting...");
-        await sleep(2000);
+        await sleep(1500);
       } else {
         count = 1;
       }
