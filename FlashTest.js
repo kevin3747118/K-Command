@@ -123,7 +123,7 @@ async function main() {
       await initial();
       await genKeys();
       await sqlStuff();
-      // await sleep(9000);
+      await sleep(9000);
     } catch (err) {
       let mailOptions = {
         from: `"${config.EMAIL.EMAIL_FROM_DESC}" <${config.EMAIL.EMAIL_FROM_ADDR}>`,
