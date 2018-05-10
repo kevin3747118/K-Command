@@ -96,6 +96,6 @@ moduleUtil.Mailer = function (mailOptions) {
 }
 
 getConn();
-// moduleUtil.utilGV = utilGV;
+moduleUtil.utilGV = utilGV;
 
 

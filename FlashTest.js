@@ -15,10 +15,9 @@ const crypto = require("crypto");
 
 
 
-let parm = { "key": "", "count": 6733 };
+let parm = { "key": "", "count": 7200 };
 let mailOptions = {
   from: `"${config.EMAIL.EMAIL_FROM_DESC}" <${config.EMAIL.EMAIL_FROM_ADDR}>`,
-  to: `kevin@alzk.com.tw;lintungwei@gmail.com;vincenthpchou@gmail.com;gavin@alzk.com.tw;cavin@alzk.com.tw`,
   subject: ``
 };
 let start = 0;
@@ -32,10 +31,10 @@ async function record() {
   fs.writeFile(dirname + "/" + config.RECORD_FILE, parm.count, (err) => {
     if (err) throw err;
   });
-  if (parm.count / 7000 === 1) {
-    mailOptions.subject = `Flash Memory Write : ${parm.count} times (No Content)`;
-    await util.Mailer(mailOptions);
-  }
+  // if (parm.count / 7000 === 1) {
+    // mailOptions.subject = `Flash Memory Write : ${parm.count} times (No Content)`;
+    // await util.Mailer(mailOptions);
+  // } 
 }
 
 
@@ -68,8 +67,16 @@ function sleep(ms) {
 
 
 async function sqlStuff() {
+
+  let delKey = await util.execSQL(`select keyid from alzk.keyareas where areaid = ?`, [config.AREAS.AREA_ID]);
+  if (delKey.length != 0 && delKey.toString() !== "") {
+    for (let i = 0; i < delKey.length; i++) {
+      await util.execSQL(`delete from alzk.ordkeys where _id = ?`, [delKey[i].keyid]);
+      await util.execSQL(`delete from alzk.keyareas where keyid = ?`, [delKey[i].keyid]);
+    }
+  }
   await util.execSQL(`insert into alzk.ordkeys (_id, keytype, keystatus, onetimepass, createdate, expiredate, timecontrol, lastreporttime) 
-        values (?, ?, ?, ?, ?, ?, ?, ?)`, [parm.key, "Tenant", 0, "N", genDates(), genDates(1), "[]", genDates()]);
+          values (?, ?, ?, ?, ?, ?, ?, ?)`, [parm.key, "Tenant", 0, "N", genDates(), genDates(1), "[]", genDates()]);
   await util.execSQL(`insert into alzk.keyareas values (?, ?, ?, ?)`, [config.AREAS.AREA_ID, parm.key, "[]", "N"]);
 }
 
@@ -80,49 +87,48 @@ async function initial() {
     let count = 0;
     let cmd = [];
 
-    // if (start === 0) {
-    //   await genKeys();
-    //   await sqlStuff();
-    //   start = 1;
-    // }
-
     while (count == 0) {
-      let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status in (3) and cmd in ("k2")`, [config.LOCKPLACES.LOCKPLACE_ID]);
-      if (results.length === 0) {
-        console.log("waiting...");
-        await sleep(1500);
-      } else {
+      // let results = await util.execSQL(`select * from alzk.lockcommands where lockplaceid = ? and status in (3) and cmd in ("k2")`, [config.LOCKPLACES.LOCKPLACE_ID]);
+      //   if (results.length === 0) {
+      //     console.log("waiting...");
+      //     await sleep(1500);
+      //   } else {
+      //     count = 1;
+      //   }
+      // }
+      let results = await util.execSQL(`select lastinsids from alzk.lockplaces where _id = ?`, [config.LOCKPLACES.LOCKPLACE_ID])
+      let results2 = await util.execSQL(`select keyid from alzk.keyareas where areaid = ?`, [config.AREAS.AREA_ID])
+      let results2Arr = []
+
+      results2.forEach((ele) => {
+        results2Arr.push(ele.keyid)
+      })
+      // 
+      if (JSON.parse(results[0].lastinsids).toString() === results2Arr.toString() || results[0].lastinsids === "[]") {
         count = 1;
+        await record();
+      } else {
+        console.log("waiting...");
+        await sleep(2000);
       }
     }
-    await record();
-    let delKey = await util.execSQL(`select keyid from alzk.keyareas where areaid = ?`, [config.AREAS.AREA_ID]);
-    let delParm = [];
-    if (delKey.length != 0) {
-      delKey.forEach(ele => {
-        delParm.push(ele.keyid);
-        util.execSQL(`delete from alzk.ordkeys where _id = ?`, [ele.keyid]);
-        util.execSQL(`delete from alzk.keyareas where keyid = ?`, [ele.keyid]);
-      });
-    }
-    console.log('delete finished')
     resolve()
   })
 }
 
 
 async function main() {
-  while(true) {
+  while (true) {
     try {
       await initial();
       await genKeys();
       await sqlStuff();
-      await sleep(9000);
+      // await sleep(9000);
     } catch (err) {
       let mailOptions = {
         from: `"${config.EMAIL.EMAIL_FROM_DESC}" <${config.EMAIL.EMAIL_FROM_ADDR}>`,
         to: `kevin@alzk.com.tw;`,
-        subject: err
+        subject: err.toString()
       };
       await util.Mailer(mailOptions);
     }
